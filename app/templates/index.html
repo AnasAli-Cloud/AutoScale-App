@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudScale Commerce & HPA Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: rgba(79, 70, 229, 0.1);
+            --bg-body: #0b0f19;
+            --bg-sidebar: #111827;
+            --bg-card: #1f2937;
+            --bg-card-hover: #283548;
+            --border: #374151;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            width: 270px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px 18px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand i {
+            font-size: 24px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: #fff;
+            background: var(--primary-light);
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-item i {
+            font-size: 16px;
+            width: 20px;
+        }
+
+        .cluster-status-box {
+            background: #0d131f;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        .pod-badge {
+            background: rgba(79, 70, 229, 0.2);
+            color: #a5b4fc;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            display: block;
+            word-break: break-all;
+            margin-top: 6px;
+            border: 1px solid rgba(79, 70, 229, 0.3);
+        }
+
+        /* Main Content Workspace */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Top Bar */
+        header {
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #1f2937;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            width: 320px;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .cart-indicator {
+            position: relative;
+            background: #1f2937;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--danger);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        /* Content Container */
+        .content {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* Real-Time Metrics & Control Strip */
+        .analytics-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .metric-card.warning::before { background: var(--warning); }
+        .metric-card.success::before { background: var(--success); }
+        .metric-card.danger::before { background: var(--danger); }
+
+        .metric-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .metric-footer {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Simulation Banner */
+        .simulation-banner {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(79, 70, 229, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .banner-text h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .banner-text p {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 600px;
+        }
+
+        .banner-actions {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-fire {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            color: white;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-fire:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-secondary {
+            background: #2a374a;
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #374760;
+        }
+
+        /* Products Grid */
+        .products-section h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.6);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .product-img {
+            height: 140px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .product-info {
+            padding: 18px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-name {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .product-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .product-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: 800;
+            color: #38bdf8;
+        }
+
+        .btn-cart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-cart:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #111827;
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div>
+            <div class="brand">
+                <i class="fa-solid fa-cloud-bolt"></i>
+                <span>CloudScale</span>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active">
+                    <i class="fa-solid fa-store"></i>
+                    <span>E-Store Catalog</span>
+                </div>
+                <div class="nav-item" onclick="fetchMetrics()">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Cluster Live Stats</span>
+                </div>
+                <div class="nav-item" onclick="triggerLoad(2000000)">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>Quick CPU Spike</span>
+                </div>
+                <div class="nav-item" onclick="location.reload()">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Refresh Pod Target</span>
+                </div>
+            </nav>
+        </div>
+
+        <div class="cluster-status-box">
+            <div class="cluster-header">
+                <span>K8s Cluster Status</span>
+                <span class="status-dot"></span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">Serving Instance:</div>
+            <div class="pod-badge" id="pod-display">{{ pod_name }}</div>
+            <div style="font-size: 11px; color: #10b981; margin-top: 8px;">
+                <i class="fa-solid fa-shield-halved"></i> HPA Autoscaler Connected
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Section -->
+    <main>
+        <header>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+                <input type="text" placeholder="Search DevOps products...">
+            </div>
+
+            <div class="user-profile">
+                <div class="cart-indicator" onclick="showToast('Shopping Cart: ' + cartCount + ' item(s)')">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count" id="cart-counter">0</span>
+                </div>
+                <span style="font-size: 13px; font-weight: 600;">DevOps Engineer</span>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Top Metric Strip -->
+            <div class="analytics-strip">
+                <div class="metric-card">
+                    <div class="metric-title">
+                        <span>Current Active Pod</span>
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <div class="metric-value" style="font-size: 16px; font-family: monospace; color: #38bdf8;">
+                        {{ pod_name }}
+                    </div>
+                    <div class="metric-footer">Managed by K8s Deployment</div>
+                </div>
+
+                <div class="metric-card success">
+                    <div class="metric-title">
+                        <span>Health Check</span>
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <div class="metric-value" style="color: var(--success);">200 OK</div>
+                    <div class="metric-footer">Kubernetes Readiness: Ready</div>
+                </div>
+
+                <div class="metric-card warning">
+                    <div class="metric-title">
+                        <span>HPA Threshold</span>
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </div>
+                    <div class="metric-value" style="color: var(--warning);">50% CPU</div>
+                    <div class="metric-footer">Min: 2 Pods | Max: 10 Pods</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">
+                        <span>Catalog Total</span>
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <div class="metric-value">{{ products|length }} Items</div>
+                    <div class="metric-footer">Available in database</div>
+                </div>
+            </div>
+
+            <!-- Stress Simulation Banner -->
+            <div class="simulation-banner">
+                <div class="banner-text">
+                    <h3>⚡ Stress Traffic & Auto-Scale Trigger</h3>
+                    <p>Click below to simulate sudden spike in consumer traffic. Your Pod will process intensive math, elevating CPU utilization to force Kubernetes HPA to scale up replicas!</p>
+                </div>
+                <div class="banner-actions">
+                    <button class="btn btn-fire" id="fire-btn" onclick="triggerLoad(4000000)">
+                        <i class="fa-solid fa-bolt"></i> Send CPU Spike
+                    </button>
+                    <button class="btn btn-secondary" onclick="location.reload()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Ping Pod
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="products-section">
+                <h3><i class="fa-solid fa-cubes"></i> Featured E-Commerce Products</h3>
+                <div class="product-grid">
+                    {% for p in products %}
+                    <div class="product-card">
+                        <div class="product-img">{{ p.icon }}</div>
+                        <div class="product-info">
+                            <div>
+                                <div class="product-name">{{ p.name }}</div>
+                                <div class="product-desc">{{ p.desc }}</div>
+                            </div>
+                            <div class="product-bottom">
+                                <div class="product-price">${{ p.price }}</div>
+                                <button class="btn-cart" onclick="addToCart('{{ p.name }}')">
+                                    <i class="fa-solid fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast">
+        <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 18px;"></i>
+        <span id="toast-msg">Item added to cart</span>
+    </div>
+
+    <script>
+        let cartCount = 0;
+
+        function addToCart(name) {
+            cartCount++;
+            document.getElementById('cart-counter').innerText = cartCount;
+            showToast(`Added "${name}" to your cart!`);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { toast.style.display = 'none'; }, 2500);
+        }
+
+        async function triggerLoad(iterations) {
+            const btn = document.getElementById('fire-btn');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Load...`;
+            btn.disabled = true;
+
+            const start = Date.now();
+            try {
+                const res = await fetch(`/heavy?iterations=${iterations}`);
+                const data = await res.json();
+                const duration = ((Date.now() - start) / 1000).toFixed(2);
+                showToast(`Heavy load executed in ${duration}s on Pod: ${data.pod_name}`);
+            } catch (err) {
+                showToast("Request sent (Worker calculating)");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Send CPU Spike`;
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchMetrics() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                showToast(`Live Serving Pod: ${data.pod_name}`);
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>

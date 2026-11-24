@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "1. Run Web UI (Local Python)",
+            "type": "shell",
+            "command": "python3 app/app.py",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "2. Build & Deploy to Kubernetes",
+            "type": "shell",
+            "command": "docker build -t autoscale-app:v1 -f docker/Dockerfile . && minikube image load autoscale-app:v1 && kubectl rollout restart deployment autoscale-app",
+            "problemMatcher": []
+        },
+        {
+            "label": "3. Open K8s Port-Forward (5000)",
+            "type": "shell",
+            "command": "kubectl port-forward svc/autoscale-service 5000:5000",
+            "problemMatcher": []
+        }
+    ]
+}

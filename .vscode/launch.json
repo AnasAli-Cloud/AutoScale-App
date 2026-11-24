@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: AutoScale Web App",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app/app.py",
+            "console": "integratedTerminal",
+            "jinja": true,
+            "justMyCode": true
+        }
+    ]
+}
